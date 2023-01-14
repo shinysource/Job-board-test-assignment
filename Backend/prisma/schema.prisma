@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleEnumType {
+  client
+  freelancer
+  admin
+}
+
+enum JobEnumType {
+  Hybrid
+  Office
+  Remote
+}
+
+enum StatusEnumType {
+  Hiring
+  Hired
+  Closed
+}
+
+model User{
+  @@map(name: "users")
+
+  id String  @id @default(uuid())
+  name String  @db.VarChar(255)
+  email String @unique
+  photo String? @default("default.png")
+  description String? @default("")
+  verified Boolean? @default(false) 
+  
+  password String
+  role RoleEnumType? @default(client)
+
+  verificationCode String? @db.Text @unique
+
+  jobs Job[]
+
+  bids Bid[]
+
+  invites Invite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, verificationCode])
+  @@index([email, verificationCode])
+}
+
+model Job{
+  @@map(name: "jobs")
+
+  id String  @id @default(uuid())
+  title String  @db.VarChar(255)
+  description String @default("")
+  salary Float
+  proved Boolean? @default(true) 
+  status StatusEnumType? @default(Hiring)
+  jobType JobEnumType? @default(Remote)
+
+  bids Bid[]
+  postEmail String
+  user User @relation(fields: [postEmail], references: [email],onDelete: Cascade)
+
+  invites Invite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id])
+  @@index([id])
+}
+
+model Bid{
+  @@map(name: "bids")
+
+  id String  @id @default(uuid())
+  
+  letter String  @db.Text 
+  
+  proved Boolean? @default(true) 
+
+  jobId String
+  job Job @relation(fields: [jobId], references: [id],onDelete: Cascade)
+
+  userId String
+  user User @relation(fields: [userId], references: [id],onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id])
+  @@index([id])
+}
+
+model Invite{
+  @@map(name: "invites")
+
+  id String  @id @default(uuid())
+  
+  letter String  @db.Text 
+  
+  proved Boolean? @default(true) 
+
+  jobId String
+  job Job @relation(fields: [jobId], references: [id],onDelete: Cascade)
+
+  freelancerId String
+  freelancer User @relation(fields: [freelancerId], references: [id],onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([id])
+  @@index([id])
+}
